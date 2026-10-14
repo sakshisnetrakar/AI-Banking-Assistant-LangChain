@@ -1,0 +1,147 @@
+AI BANKING ASSISTANT USING LANGCHAIN
+=====================================
+
+1. BUSINESS PROBLEM
+-------------------
+A bank receives thousands of repetitive customer questions every day. A LangChain-powered AI Banking Assistant can answer common questions quickly, retrieve approved policy information, and hand complex or sensitive requests to a human banking representative.
+
+The assistant must use only approved banking FAQ/policy content. It should not invent interest rates, account information, or eligibility decisions.
+
+
+2. CUSTOMER QUESTIONS THE ASSISTANT CAN HANDLE
+----------------------------------------------
+
+Question: What documents are required for a home loan?
+Answer: Typical documents include identity proof, address proof, income proof such as salary slips or income-tax returns, bank statements, employment proof, and property documents. Exact requirements can vary by bank, applicant profile, and property type.
+
+Question: What is the interest rate for a personal loan?
+Answer: Personal-loan interest rates vary based on the customer’s credit profile, income, loan amount, repayment tenure, and the bank’s current policy. The assistant should retrieve the current approved rate card rather than make up a rate.
+
+Question: Am I eligible for a car loan?
+Answer: Car-loan eligibility generally depends on monthly income, employment type, credit history, existing EMIs, loan amount, vehicle value, and bank policy. The assistant can collect these details and either perform an approved preliminary check or guide the customer to an application officer.
+
+Question: How can I block my debit card?
+Answer: The customer should immediately use the bank’s official mobile app, net-banking portal, customer-care helpline, or branch to block the card. For security, the assistant must never ask the customer to share their PIN, CVV, OTP, or full card number in chat.
+
+Question: What is the minimum balance?
+Answer: Minimum-balance requirements depend on account type, account variant, and branch/location category. The assistant should retrieve the balance rule for the customer’s specific account instead of giving a generic amount.
+
+Question: Explain EMI.
+Answer: EMI means Equated Monthly Instalment. It is the regular monthly payment a borrower makes to repay a loan. An EMI includes both the loan principal and interest.
+
+Question: What happens if I miss an EMI?
+Answer: Missing an EMI may lead to late-payment charges, additional interest, reminders, and a negative effect on the customer’s credit score. The customer should contact the bank as early as possible to discuss available options.
+
+
+3. LANGCHAIN DESIGN
+-------------------
+
+LangChain connects the AI model to useful tools and approved banking information.
+
+Main components:
+
+1. Chat model
+   Understands the customer’s question and writes a clear response.
+
+2. Retriever
+   Searches a small bank FAQ or policy document for the most relevant approved answer.
+
+3. Tools
+   Python functions or secure APIs the assistant can call when needed.
+
+4. Conversation memory
+   Keeps recent context, for example, remembering that the customer is asking about a home loan in the next message.
+
+5. Human handoff
+   Escalates a request to a bank employee if it requires verification, has a complaint, involves fraud, or cannot be answered from approved information.
+
+
+4. EXAMPLE TOOLS
+----------------
+
+Tool name: search_banking_faq(question)
+Purpose: Finds the most relevant answer from the approved FAQ text.
+
+Tool name: calculate_emi(principal, annual_rate, years)
+Purpose: Calculates an illustrative monthly EMI.
+
+Tool name: check_loan_eligibility(customer_id, loan_type, income, existing_emi)
+Purpose: Performs an approved preliminary eligibility check. It must clearly state that final approval depends on bank verification.
+
+Tool name: retrieve_account_summary(customer_id)
+Purpose: Retrieves permitted account information only after secure authentication and authorization.
+
+Tool name: block_debit_card(customer_id, confirmation)
+Purpose: Starts a debit-card-block request only after the customer is authenticated and gives explicit confirmation.
+
+
+5. AGENT WORKFLOW
+-----------------
+
+Customer message
+      |
+      v
+Understand the intent
+      |
+      +--> General policy question --> Search approved FAQ --> Answer customer
+      |
+      +--> EMI question --> Call EMI calculator --> Explain result
+      |
+      +--> Eligibility question --> Collect missing details --> Call eligibility tool --> Explain preliminary result
+      |
+      +--> Sensitive request (account/card) --> Authenticate customer --> Ask confirmation --> Call secure tool
+      |
+      v
+Return a clear answer or hand off to a human agent
+
+
+6. SAFETY RULES
+---------------
+
+- Use mock customer data only for a training project.
+- Never request or display PINs, CVVs, OTPs, passwords, or full card numbers.
+- Require authentication before retrieving account information.
+- Require explicit customer confirmation before blocking a card or submitting an application.
+- Clearly label EMI calculations and eligibility results as illustrative or preliminary.
+- Escalate suspicious transactions, fraud reports, disputes, and complex complaints to a human agent.
+
+
+7. SIMPLE PYTHON/LANGCHAIN PSEUDOCODE
+--------------------------------------
+
+from langchain_core.tools import tool
+
+@tool
+def calculate_emi(principal: float, annual_rate: float, years: float) -> str:
+    """Return an illustrative monthly EMI."""
+    # Python EMI formula goes here
+    return "Estimated monthly EMI: Rs. 4,614"
+
+@tool
+def search_banking_faq(question: str) -> str:
+    """Search approved banking FAQ information."""
+    return "Relevant approved FAQ answer"
+
+tools = [calculate_emi, search_banking_faq]
+
+# The LangChain agent chooses a tool according to the customer request.
+# It then uses the tool output to compose a safe final response.
+
+
+8. EXPECTED OUTCOME
+-------------------
+
+The AI Banking Assistant answers common banking questions accurately from approved content, uses tools when calculation or secure retrieval is needed, remembers short conversation context, and safely escalates requests that need a human banker.
+
+
+9. LOCAL DEMO APPLICATION
+-------------------------
+
+This folder also contains a runnable FastAPI chatbot:
+
+1. Open a terminal in this folder.
+2. Run: pip install -r requirements.txt
+3. Run: uvicorn main:app --reload
+4. Open: http://127.0.0.1:8000
+
+The browser chatbot uses a LangChain FAQ tool and mock banking information only.
